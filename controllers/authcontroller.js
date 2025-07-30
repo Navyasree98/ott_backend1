@@ -1,6 +1,8 @@
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const BlacklistedToken = require('../models/blacklistedToken');
+
 require('dotenv').config();
 
 const expiresIn= process.env.expiresIn ;
@@ -36,8 +38,21 @@ exports.login = async (req, res) => {
     });
     const userrole= user.role;
     res.json({ token, userrole });
-    localStorage.setItem("token", token);
   } catch (err) {
     res.status(500).json({ message: 'Login failed', error: err.message });
+  }
+};
+exports.logout = async (req, res) => {
+  try {
+    const token = req.token; 
+    const decoded = req.user;
+
+    const expiresAt = new Date(decoded.exp * 1000);
+
+    await BlacklistedToken.create({ token, expiresAt });
+
+    res.status(200).json({ message: 'Logout successful' });
+  } catch (err) {
+    res.status(500).json({ message: 'Logout failed', error: err.message });
   }
 };
