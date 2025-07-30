@@ -1,25 +1,32 @@
 const Movie = require("../models/movie");
-//create new movie
+// Create new movie
 exports.addMovie = async (req, res) => {
   try {
-  const lastMovie = await Movie.findOne()
-  .sort({ createdAt: -1 }) 
-  .lean();
-  let newCode = "MOV_001"; 
-  if (lastMovie && /^MOV_(\d+)$/.test(lastMovie.code)) {
-    const match = lastMovie.code.match(/^MOV_(\d+)$/);
-    const lastNumber = parseInt(match[1], 10);
-    const nextNumber = lastNumber + 1;
-  newCode = `MOV_${String(nextNumber).padStart(3, '0')}`;
-}
+    const lastMovie = await Movie.findOne().sort({ createdAt: -1 }).lean();
+    let newCode = "MOV_001";
 
-console.log("New movie code:", newCode);
+    if (lastMovie && /^MOV_(\d+)$/.test(lastMovie.code)) {
+      const match = lastMovie.code.match(/^MOV_(\d+)$/);
+      const lastNumber = parseInt(match[1], 10);
+      const nextNumber = lastNumber + 1;
+      newCode = `MOV_${String(nextNumber).padStart(3, '0')}`;
+    }
+
     const movie = new Movie({ ...req.body, code: newCode });
     await movie.save();
-    res.status(201).json({ message: "Movie added successfully", movie });
+
+    return res.status(201).json({
+      success: true,
+      message: "Movie added successfully",
+      data: movie,
+    });
   } catch (error) {
     console.error("Error adding movie:", error);
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({
+      success: false,
+      message: "Failed to add movie",
+      error: error.message,
+    });
   }
 };
 
@@ -27,9 +34,17 @@ console.log("New movie code:", newCode);
 exports.getAllMovies = async (req, res) => {
   try {
     const movies = await Movie.find();
-    res.json(movies);
+    return res.status(200).json({
+      success: true,
+      message: "Movies fetched successfully",
+      data: movies,
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch movies",
+      error: error.message,
+    });
   }
 };
 
@@ -38,11 +53,22 @@ exports.getMovieById = async (req, res) => {
   try {
     const movie = await Movie.findById(req.params.id);
     if (!movie) {
-      return res.status(404).json({ error: "Movie not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Movie not found",
+      });
     }
-    res.json(movie);
+    return res.status(200).json({
+      success: true,
+      message: "Movie fetched successfully",
+      data: movie,
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch movie",
+      error: error.message,
+    });
   }
 };
 
@@ -51,13 +77,27 @@ exports.updateMovie = async (req, res) => {
   try {
     const movie = await Movie.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
+      runValidators: true,
     });
+
     if (!movie) {
-      return res.status(404).json({ error: "Movie not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Movie not found",
+      });
     }
-    res.json({ message: "Movie updated", movie });
+
+    return res.status(200).json({
+      success: true,
+      message: "Movie updated successfully",
+      data: movie,
+    });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({
+      success: false,
+      message: "Failed to update movie",
+      error: error.message,
+    });
   }
 };
 
@@ -66,10 +106,21 @@ exports.deleteMovie = async (req, res) => {
   try {
     const movie = await Movie.findByIdAndDelete(req.params.id);
     if (!movie) {
-      return res.status(404).json({ error: "Movie not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Movie not found",
+      });
     }
-    res.json({ message: "Movie deleted successfully" });
+
+    return res.status(200).json({
+      success: true,
+      message: "Movie deleted successfully",
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete movie",
+      error: error.message,
+    });
   }
 };
